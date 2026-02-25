@@ -5,7 +5,11 @@ import FilterDropdown from "../components/ui/FilterDropdown";
 import Dummychart from "../components/Dummychart";
 import Card from "../components/ui/Card";
 import { useRouter } from "next/navigation";
-import { Thermometer, Wind, Sun, CloudRain, Bell, Cpu, Circle, CircleOff } from "lucide-react";
+import { PiThermometerBold } from "react-icons/pi";
+import { FaArrowUpRightFromSquare } from "react-icons/fa6";
+import { FiWind } from "react-icons/fi";
+import { MdSunny } from "react-icons/md";
+import { BsFillCloudRainFill } from "react-icons/bs";
 
 export default function Home() {
   const [selectedPot, setSelectedPot] = useState("POT 1");
@@ -17,146 +21,125 @@ export default function Home() {
   const varOptions = ["Temperature", "Soil Moisture", "Water Level", "Water Flow", "Valve Status"];
 
   return (
-
-    <div className="grid grid-cols-12 gap-[15px]">
-
-      {/* LEFT AREA */}
-      <div className="col-span-8 flex flex-col gap-[15px]">
+      <div className="col-span-8 flex flex-col gap-8 p-8 px-16 h-full">
 
         {/* WEATHER */}
-        <div className="grid grid-cols-4 gap-[15px] h-[180px]">
-
-          <Card 
-            hover
-            onClick={()=>router.push("/weather?tab=temperature")}
-            className="w-full flex flex-col justify-between p-[12px]"
-          >
-            <div className="flex flex-col items-start">
-                <Thermometer size={25} />
-                <p className="mt-[2px] text-[14px] font-medium">Temperature</p>
+        <div className="grid grid-cols-4 gap-8 min-h-[140px]">
+          <Card className="w-full grid grid-cols-1 justify-between bg-white">
+            <div className="flex justify-between items-start w-full">
+              <div className="flex flex-col items-start gap-[4px]">
+                <PiThermometerBold size={24} className="text-[#10B981]"/>
+                <p className="text-[14px] text-[#1E293B]/60 font-semibold">Temperature</p>
+              </div>
+              <FaArrowUpRightFromSquare
+              onClick={()=>router.push("/weather?tab=temperature")}
+              size={24} 
+              className="text-[#1E293B]/60 hover:text-[#10B981] cursor-pointer transition"
+              />
             </div>
-            <div className="flex justify-between items-end w-full">
-                <div className="flex items-baseline leading-none">
-                  <p className="text-[48px] font-regular tracking-tighter">20</p>
-                  <p className="text-[30px] font-light tracking-tighter ml-0.5">°C</p>
-                </div>
-                <div className="bg-[#43C77A] text-white text-[11px] px-2.5 py-0.5 rounded-full font-medium mb-1.5">
-                  Good
-                </div>
+            <div className="flex items-baseline leading-none items-end w-full">
+              <div className="text-[48px] font-semibold tracking-tighter">20</div>
+              <p className="text-[30px] text-[#1E293B]/60 font-bold tracking-tighter ml-1">°C</p>
             </div>
           </Card>
 
-          <Card 
-            hover
-            onClick={()=>router.push("/weather?tab=wind")}
-            className=" w-full flex flex-col justify-between p-[12px]"
-          >
-            <div className="flex flex-col items-start">
-                <Wind size={25} />
-                <p className="mt-[2px] text-[14px] font-medium">Wind</p>
+          <Card className="w-full grid grid-cols-1 justify-between bg-white">
+            <div className="flex justify-between items-start w-full">
+              <div className="flex flex-col items-start gap-[4px]">
+                  <FiWind size={24} className="text-[#10B981]"/>
+                  <p className="text-[14px] text-[#1E293B]/60 font-semibold">Wind</p>
+              </div>
+              <FaArrowUpRightFromSquare
+              onClick={()=>router.push("/weather?tab=wind")}
+              size={24} 
+              className="text-[#1E293B]/60 hover:text-[#10B981] cursor-pointer transition"
+              />
             </div>
-            <div className="flex justify-between items-end w-full">
-                <div className="flex items-baseline leading-none">
-                  <p className="text-[48px] font-regular tracking-tighter">2</p>
-                  <p className="text-[30px] font-light tracking-tighter ml-0.5">m/s</p>
-                </div>
-                <div className="bg-[#43C77A] text-white text-[11px] px-2.5 py-0.5 rounded-full font-medium mb-1.5">
-                  Good
-                </div>
+            <div className="flex items-baseline leading-none items-end w-full">
+              <div className="text-[48px] font-semibold tracking-tighter">2</div>
+              <p className="text-[30px] text-[#1E293B]/60 font-bold tracking-tighter ml-1">m/s</p>
             </div>
           </Card>
 
-          <Card 
-            hover
-            onClick={()=>router.push("/weather?tab=uv")}
-            className=" w-full flex flex-col justify-between p-[12px]"
-          >
-            <div className="flex flex-col items-start">
-                <Sun size={25} />
-                <p className="mt-[2px] text-[14px] font-medium">UV</p>
+          <Card className="w-full grid grid-cols-1 justify-between bg-white">
+            <div className="flex justify-between items-start w-full">
+              <div className="flex flex-col items-start gap-[4px]">
+                <MdSunny size={24} className="text-[#10B981]"/>
+                <p className="text-[14px] text-[#1E293B]/60 font-semibold">UV</p>
+              </div>  
+              <FaArrowUpRightFromSquare
+              onClick={()=>router.push("/weather?tab=uv")}
+              size={24} 
+              className="text-[#1E293B]/60 hover:text-[#10B981] cursor-pointer transition"
+              />
             </div>
-            <div className="flex justify-between items-end w-full">
-                <div className="flex items-baseline leading-none">
-                  <p className="text-[48px] font-regular tracking-tighter">10</p>
-                  <p className="text-[30px] font-light tracking-tighter ml-0.5"></p>
-                </div>
-                <div className="bg-[#F33A3A] text-white text-[11px] px-2.5 py-0.5 rounded-full font-medium mb-1.5">
-                  Bad
-                </div>
+            <div className="flex items-baseline leading-none items-end w-full">
+              <div className="text-[48px] font-semibold tracking-tighter">10</div>
+              <p className="text-[30px] text-[#1E293B]/60 font-bold tracking-tighter ml-1"></p>
             </div>
           </Card>
 
-          <Card 
-            hover
-            onClick={()=>router.push("/weather?tab=rainfall")}
-            className=" w-full flex flex-col justify-between p-[12px]"
-          >
-            <div className="flex flex-col items-start">
-                <CloudRain size={25} />
-                <p className="mt-[2px] text-[14px] font-medium">Rainfall</p>
+          <Card className=" w-full grid grid-cols-1 justify-between bg-white">
+            <div className="flex justify-between items-start w-full">
+              <div className="flex flex-col items-start gap-[4px]">
+                  <BsFillCloudRainFill size={24} className="text-[#10B981]"/>
+                  <p className="text-[14px] text-[#1E293B]/60 font-semibold">Rainfall</p>
+              </div>
+              <FaArrowUpRightFromSquare
+              onClick={()=>router.push("/weather?tab=rainfall")}
+              size={24} 
+              className="text-[#1E293B]/60 hover:text-[#10B981] cursor-pointer transition"
+              />
             </div>
-            <div className="flex justify-between items-end w-full">
-                <div className="flex items-baseline leading-none">
-                  <p className="text-[48px] font-regular tracking-tighter">10</p>
-                  <p className="text-[30px] font-light tracking-tighter ml-0.5">mm</p>
-                </div>
-                <div className="bg-[#43C77A] text-white text-[11px] px-2.5 py-0.5 rounded-full font-medium mb-1.5">
-                  Good
-                </div>
+            <div className="flex items-baseline leading-none items-end w-full">
+              <div className="text-[48px] font-semibold tracking-tighter">10</div>
+              <p className="text-[30px] text-[#1E293B]/60 font-bold tracking-tighter ml-1">mm</p>
             </div>
           </Card>
-
         </div>
 
         {/* DEVICE */}
-        <div className="grid grid-cols-3 gap-[15px] h-[140px]">
-
+        <div className="grid grid-cols-3 gap-8 min-h-[140px]">
           <Card 
-            onClick={()=>router.push("/devices")}
-            className=" w-full flex flex-col justify-between p-[20px]"
+            className=" w-full flex flex-col justify-between font-semibold bg-[#10B981] text-white"
           >
-            <div className="flex justify-between items-end w-full">
-              <p className="font-medium text-[14px]">Total Devices</p>
-              <Cpu size={30}/>
+            <div className="flex justify-between items-end w-full text-[14px]">
+              Total Devices
             </div>
             <div className="flex items-baseline leading-none">
-              <p className="text-[40px] text-[#29A95E] font-regular tracking-tighter">54</p>
-              <p className="text-[14px] font-regular ml-[12px]">Installed</p>
+              <div className="text-[48px] tracking-tighter">54</div>
+              <p className="text-[14px] font-bold ml-3">Installed</p>
+            </div>
+          </Card>
+
+          <Card 
+            className=" w-full flex flex-col justify-between font-semibold bg-[#10B981] text-white"
+          >
+            <div className="flex justify-between items-end w-full text-[14px]">
+              Active Devices
+            </div>
+            <div className="flex items-baseline leading-none">
+              <div className="text-[48px] tracking-tighter">50</div>
+              <p className="text-[14px] font-bold ml-3">Operating</p>
             </div>
           </Card>
 
           <Card 
             onClick={()=>router.push("/devices")}
-            className=" w-full flex flex-col justify-between p-[20px]"
+            className=" w-full flex flex-col justify-between font-semibold bg-[#EF4444] text-white"
           >
             <div className="flex justify-between items-end w-full">
-              <p className="font-medium text-[14px]">Active Devices</p>
-              <Circle size={30}/>
+              <p className="font-semibold text-[14px]">Inactive Devices</p>
             </div>
             <div className="flex items-baseline leading-none">
-              <p className="text-[40px] text-[#29A95E] font-regular tracking-tighter">50</p>
-              <p className="text-[14px] font-regular ml-[12px]">Operating</p>
+              <div className="text-[48px] tracking-tighter">4</div> 
+              <p className="text-[14px] font-bold ml-[12px]">Offline</p>
             </div>
           </Card>
-
-          <Card 
-            onClick={()=>router.push("/devices")}
-            className=" w-full flex flex-col justify-between p-[20px]"
-          >
-            <div className="flex justify-between items-end w-full">
-              <p className="font-medium text-[14px]">Inactive Devices</p>
-              <CircleOff size={30}/>
-            </div>
-            <div className="flex items-baseline leading-none">
-              <p className="text-[40px] text-[#29A95E] font-regular tracking-tighter">4</p>
-              <p className="text-[14px] font-regular ml-[12px]">Offline</p>
-            </div>
-          </Card>
-
         </div>
 
         {/* CHART */}
-        <Card className="h-[320px] p-[20px] flex flex-col">
+        <Card className="bg-white h-full p-[20px] flex flex-col">
           <div className="flex justify-end gap-3">
               <FilterDropdown 
                 label="Select POT"
@@ -196,59 +179,5 @@ export default function Home() {
           </div>
         </Card>
       </div>
-
-      {/* RIGHT AREA */}
-      <div className="col-span-4">
-
-        <Card className="h-full p-[20px] gap-[15px] flex flex-col">
-
-          <div className="flex items-center gap-2 mb-4">
-            <Bell size={25}/>
-            <p className="font-medium text-[14px]">Notifications</p>
-          </div>
-
-          <div className="space-y-3 text-[14px]">
-
-            <div className="bg-[#F1F3F5] rounded-xl p-4 flex flex-col gap-1 relative">
-              <div className="w-2.5 h-2.5 rounded-full bg-orange-400 mb-1" />
-              <div className="flex justify-between items-center">
-                <h4 className="font-bold text-gray-800 text-[15px]">POT 2</h4>
-                <span className="text-gray-400 text-[13px]">2m</span>
-              </div>
-              <p className="text-gray-500 text-[14px] leading-tight">
-                ESP32 Restarting
-              </p>
-            </div>
-
-            <div className="bg-[#F1F3F5] rounded-xl p-4 flex flex-col gap-1 relative">
-              <div className="w-2.5 h-2.5 rounded-full bg-green-400 mb-1" />
-              <div className="flex justify-between items-center">
-                <h4 className="font-bold text-gray-800 text-[15px]">POT 12</h4>
-                <span className="text-gray-400 text-[13px]">4m</span>
-              </div>
-              <p className="text-gray-500 text-[14px] leading-tight">
-                ESP32 Connecting
-              </p>
-            </div>
-
-            <div className="bg-[#F1F3F5] rounded-xl p-4 flex flex-col gap-1 relative">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-400 mb-1" />
-              <div className="flex justify-between items-center">
-                <h4 className="font-bold text-gray-800 text-[15px]">POT 4</h4>
-                <span className="text-gray-400 text-[13px]">4m</span>
-              </div>
-              <p className="text-gray-500 text-[14px] leading-tight">
-                [ERROR] Sensor Reading Failed 
-              </p>
-            </div>
-
-          </div>
-
-        </Card>
-
-      </div>
-
-    </div>
-
   );
 }

@@ -1,45 +1,52 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
-import { subMinutes } from "date-fns";
+import { format } from "date-fns";
 
 type Range = [Date, Date];
 
 type TimeRangeContextType = {
     range: Range;
-    setRange: (range: Range) => void;
+    setRange: (range: Range, quickLabel?: string | null) => void;
+    label: string;
 };
 
 const TimeRangeContext = createContext<TimeRangeContextType | undefined>(
     undefined
 );
 
-export function TimeRangeProvider({
+export const TimeRangeProvider = ({
     children,
 }: {
     children: React.ReactNode;
-}) {
-    // Default awal: Last 5 minutes
-    const [range, setRange] = useState<Range>([
-        subMinutes(new Date(), 5), 
-        new Date()
-    ]);
+}) => {
+    const now = new Date();
+    const defaultRange: Range = [new Date(now.getTime() - 5 * 60000), now];
 
-    // Kita hapus variabel 'label' dari sini. 
-    // Kenapa? Karena logika "Last 5 Minutes" dsb lebih tepat dihitung 
-    // di komponen UI agar Context tetap ringan dan hanya fokus pada data (state).
+    const [range, setRangeState] = useState<Range>(defaultRange);
+    const [quickLabel, setQuickLabel] = useState<string | null>("Last 5 minutes");
+
+    const setRange = (newRange: Range, label?: string | null) => {
+        setRangeState(newRange);
+        setQuickLabel(label ?? null);
+    };
+
+    const label =
+        quickLabel ??
+        `${format(range[0], "yyyy-MM-dd HH:mm")} - ${format(
+        range[1],
+        "yyyy-MM-dd HH:mm"
+    )}`;
 
     return (
-        <TimeRangeContext.Provider value={{ range, setRange }}>
-            {children}
+        <TimeRangeContext.Provider value={{ range, setRange, label }}>
+        {children}
         </TimeRangeContext.Provider>
     );
-}
+};
 
-export function useTimeRange() {
-    const context = useContext(TimeRangeContext);
-    if (!context) {
-        throw new Error("useTimeRange must be used inside TimeRangeProvider");
-    }
-    return context;
-}
+export const useTimeRange = () => {
+    const ctx = useContext(TimeRangeContext);
+    if (!ctx) throw new Error("useTimeRange must be used inside provider");
+    return ctx;
+    };

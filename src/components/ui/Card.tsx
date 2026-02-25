@@ -2,29 +2,36 @@
 
 export default function Card({
     children,
-    className="",
-    hover=false,
-    activeTab=false,
+    className = "",
+    hover = false,
+    activeTab = false,
     onClick,
-    }:{
-    children:React.ReactNode;
-    className?:string;
-    hover?:boolean;
-    activeTab?:boolean;
-    onClick?:()=>void;
-    }) {
+}: {
+    children: React.ReactNode;
+    className?: string;
+    hover?: boolean;
+    activeTab?: boolean;
+    onClick?: () => void;
+}) {
+    // 1. Cek apakah di className yang dikirim ada instruksi warna background kustom
+    const hasCustomBg = className.includes("bg-");
+    const hasCustomText = className.includes("text-");
+
     return (
         <div
-        onClick={onClick}
-        className={`
-            "bg-white rounded-[8px] p-[15px] transition text-[#454545]"
-        
-            ${hover ? "hover:bg-gradient-to-t hover:from-[#29A95E] hover:to-[#43C77A] hover:text-white cursor-pointer" : ""}
-            ${activeTab ? "bg-gradient-to-t from-[#29A95E] to-[#43C77A] text-white" : "bg-white text-[#454545]"}
-            ${className}
-        `}
+            onClick={onClick}
+            className={`
+                rounded-[16px] p-5 shadow-md transition-all duration-200
+                ${activeTab ? "bg-[#10B981] text-white" : (!hasCustomBg ? "bg-white" : "")}
+                
+                ${!activeTab && !hasCustomText ? "text-[#1E293B]" : ""}
+
+                ${hover && !activeTab ? "hover:bg-[#1E293B]/10 cursor-pointer" : ""}
+                
+                ${className}
+            `}
         >
-        {children}
+            {children}
         </div>
     );
 }

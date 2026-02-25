@@ -16,19 +16,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-
+      <body className={`${inter.className} flex min-h-screen bg-[#F8FAFC]`}>
         <TimeRangeProvider>
-
           <Sidebar />
-
-          <main className="ml-[200px] px-[15px] py-[15px]">
+          <main className="flex-1 min-h-screen ml-[240px] flex flex-col">
             <DashboardHeader />
-            {children}
+            <div className="flex-1 pt-0">
+              {children}
+            </div>
           </main>
-
         </TimeRangeProvider>
-
       </body>
     </html>
   );

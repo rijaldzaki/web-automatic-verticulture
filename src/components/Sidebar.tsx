@@ -2,26 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Cloud, Leaf, Cpu } from "lucide-react";
+import { BsGrid1X2Fill, BsCloudSunFill } from "react-icons/bs";
+import { PiPlantFill } from "react-icons/pi";
+import { FaChartSimple, FaMicrochip } from "react-icons/fa6";
 import Image from "next/image";
 
 const menu = [
-    { name: "Home", path: "/", icon: Home, },
-    { name: "Weather", path: "/weather", icon: Cloud },
-    { name: "Plants", path: "/plants", icon: Leaf },
-    { name: "Devices", path: "/devices", icon: Cpu },
+    { name: "Dashboard", path: "/", icon: BsGrid1X2Fill, },
+    { name: "Weather", path: "/weather", icon: BsCloudSunFill },
+    { name: "Monitoring", path: "/monitoring", icon: PiPlantFill },
+    { name: "Analysis", path: "/analysis", icon: FaChartSimple },
+    { name: "Devices", path: "/devices", icon: FaMicrochip },
 ];
 
 export default function Sidebar() {
     const pathname = usePathname();
 
     return (
-        <aside className="fixed left-0 top-0 w-[200px] h-screen bg-white p-5">
+        <aside className="fixed w-[240px] h-screen bg-[#1E293B] p-8">
 
-        <div className="mb-[30px] mt-[15px]">
+        <div className="mb-[50px] items-center flex flex-col juston-center">
         <Link href="/">
             <Image 
-            src="/logo.png" 
+            src="/logo.svg" 
             alt="VertIO Logo"
             width={140} 
             height={38} 
@@ -42,12 +45,12 @@ export default function Sidebar() {
                 key={item.path}
                 href={item.path}
                 className={
-                    `flex items-center gap-3 p-3 rounded-[8px] transition ${active ? "bg-[#43C77A]/20 text-[#29A95E]" : "text-[#454545] hover:bg-[#43C77A]/20 hover:text-[#29A95E]"}
+                    `flex items-center gap-3 p-3 rounded-[16px] transition ${active ? "bg-[#10B981] text-white" : "text-[#ffffff]/60 hover:bg-[#ffffff]/20 hover:text-[#ffffff]/80"}
                     font-medium text-[14px]
                     `
                 }
                 >
-                <Icon size={18}/>
+                <Icon size={24}/>
                 {item.name}
                 </Link>
             );
