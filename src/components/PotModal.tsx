@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { 
     PiThermometerBold, 
     PiDropBold, 
@@ -29,7 +30,7 @@ export default function PotModal({ pot, onClose }: PotModalProps) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
-            <div className="bg-[#F8FAFC] w-full max-w-2xl rounded-[24px] shadow-2xl p-6 transition-all border border-white">
+            <div className="bg-[#F8FAFC] w-full max-w-3xl rounded-[24px] shadow-2xl p-6 transition-all border border-white">
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <h2 className="text-[24px] font-bold text-[#1E293B]">
@@ -99,8 +100,9 @@ export default function PotModal({ pot, onClose }: PotModalProps) {
 
                 {/* Button Detail */}
                 <button
-                    onClick={() => (window.location.href = `/analysis/${pot.id}`)}
-                    className="w-full py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-[14px] font-semibold rounded-[16px] transition-all transform active:scale-[0.98] shadow-md"
+                    onClick={() => (window.location.href = `/analysis?pot=${pot.id}`)}
+                    // Atau jika menggunakan router: onClick={() => router.push(`/analysis?pot=${pot.id}`)}
+                    className="w-full py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-[14px] font-semibold rounded-[16px] transition-all transform active:scale-[0.98] shadow-md uppercase tracking-wide mt-4"
                 >
                     Detail Analysis
                 </button>
@@ -122,19 +124,19 @@ function StatItem({
 }) {
     return (
         <div className="w-full flex flex-col justify-between bg-white p-4 rounded-[16px] shadow-sm border border-slate-100 transition-colors group">
-            <div className="flex flex-col items-start gap-1">
+            <div className="flex items-center gap-2 mb-1">
                 <div className="text-[#3B82F6] mb-1 transition-transform">
                     {icon}
                 </div>
-                <p className="text-[14px] font-semibold text-[#1E293B]/60 leading-tight">
+                <p className="text-[12px] font-bold text-[#1E293B]/60 uppercase tracking-wide">
                     {label}
                 </p>
             </div>
             <div className="flex items-baseline gap-1 mt-2">
-                <p className="text-[35px] font-bold text-[#1E293B]">
+                <p className="text-4xl font-bold tracking-tighter text-[#1E293B]">
                     {value}
                 </p>
-                <p className="text-[25px] font-bold text-[#1E293B]/60">
+                <p className="text-2xl ml-1 font-bold text-[#1E293B]/60">
                     {unit}
                 </p>
             </div>

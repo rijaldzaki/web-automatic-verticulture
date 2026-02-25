@@ -1,159 +1,261 @@
 "use client";
 
-import { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Card from "../../components/ui/Card";
-import TimeFilter from "../../components/ui/TimeFilter";
-import DownloadButton from "../../components/ui/DownloadButton";
-import Dummychart from "../../components/Dummychart";
-import { PiThermometerBold } from "react-icons/pi";
-import { FaWind } from "react-icons/fa6";
-import { MdSunny } from "react-icons/md";
-import { BsFillCloudRainFill } from "react-icons/bs";
+import { 
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+} from "recharts";
 
-function WeatherContent() {
-    const router = useRouter();
+// Skema Warna untuk maksimal 4 POT
+const POT_COLORS = ["#10B981", "#3B82F6", "#EF4444", "#F59E0B"];
+
+// Samakan format dengan Monitoring Page: POT-01, POT-02, ..., POT-54
+const ALL_POTS = Array.from({ length: 54 }, (_, i) => `POT-${(i + 1).toString().padStart(2, '0')}`);
+
+export default function AnalysisPage() {
+    return (
+        <Suspense fallback={<div className="p-8 font-bold text-slate-500">Loading Analysis...</div>}>
+            <AnalysisContent />
+        </Suspense>
+    );
+}
+
+function AnalysisContent() {
     const searchParams = useSearchParams();
     
-    // Mengambil tab dari URL, default ke 'temperature'
-    const activeTab = searchParams.get("tab") || "temperature";
+    // 1. Ambil POT dari URL (hasil klik dari Monitoring Page), jika tidak ada gunakan POT-01
+    const urlPot = searchParams.get("pot");
+    const initialPot = urlPot && ALL_POTS.includes(urlPot) ? urlPot : ALL_POTS[0];
+    
+    const [selectedPots, setSelectedPots] = useState<string[]>([initialPot]);
+    const [potToAdd, setPotToAdd] = useState<string>("");
 
-    const navigateTab = (tabName: string) => {
-        router.push(`/weather?tab=${tabName}`);
+    // Update daftar POT yang tersedia di dropdown (belum terpilih)
+    const availablePots = ALL_POTS.filter((p) => !selectedPots.includes(p));
+
+    // Pastikan potToAdd selalu memiliki nilai valid yang tidak ada di selectedPots
+    useEffect(() => {
+        if (availablePots.length > 0 && !availablePots.includes(potToAdd)) {
+            setPotToAdd(availablePots[0]);
+        }
+    }, [selectedPots, availablePots, potToAdd]);
+
+    const handleAddPot = () => {
+        if (selectedPots.length < 4 && potToAdd && !selectedPots.includes(potToAdd)) {
+            setSelectedPots([...selectedPots, potToAdd]);
+        }
     };
 
-    // Data pembantu agar konten bawah berubah sesuai pilihan
-    const tabDetails: Record<string, { label: string; unit: string; value: string }> = {
-        temperature: { label: "Temperature", unit: "°C", value: "20" },
-        wind: { label: "Wind", unit: "m/s", value: "2" },
-        uv: { label: "UV Index", unit: "", value: "10" },
-        rainfall: { label: "Rainfall", unit: "mm", value: "10" },
+    const handleRemovePot = (potToRemove: string) => {
+        if (selectedPots.length > 1) {
+            setSelectedPots(selectedPots.filter((p) => p !== potToRemove));
+        }
     };
-
-    const current = tabDetails[activeTab] || tabDetails.temperature;
 
     return (
-        <div className="col-span-8 flex flex-col gap-8 p-8 px-15 h-full">           
-            {/* 1. Navigasi Card Atas */}
-            <div className="grid grid-cols-4 gap-8 min-h-[140px]">         
-                <Card 
-                    onClick={() => navigateTab("temperature")}
-                    hover
-                    activeTab={activeTab === "temperature"}
-                >
-                    <div className="flex flex-col items-start gap-[2px]">
-                        <PiThermometerBold size={24} />
-                        <p className="text-[14px] font-medium text-inherit">Temperature</p>
-                    </div>
-                    <div className="flex items-baseline items-end w-full">
-                        <div className="text-[48px] font-semibold tracking-tighter">20</div>
-                        <p className="text-[30px] font-medium tracking-tighter ml-1">°C</p>
-                    </div>
-                </Card>
-
-                <Card 
-                    onClick={() => navigateTab("wind")}
-                    hover
-                    activeTab={activeTab === "wind"}
-                >
-                    <div className="flex flex-col items-start gap-[2px]">
-                        <FaWind size={24}/>
-                        <p className="text-[14px] font-medium text-inherit">Wind</p>
-                    </div>
-                    <div className="flex items-baseline items-end w-full">
-                        <div className="text-[48px] font-semibold tracking-tighter">2</div>
-                        <p className="text-[30px] font-medium tracking-tighter ml-1">m/s</p>
-                    </div>
-                </Card>
-
-                <Card 
-                    onClick={() => navigateTab("uv")}
-                    hover
-                    activeTab={activeTab === "uv"}
-                >
-                    <div className="flex flex-col items-start gap-[2px]">
-                        <MdSunny size={24}/>
-                        <p className="text-[14px] font-medium text-inherit">UV</p>
-                    </div>
-                    <div className="flex items-baseline items-end w-full">
-                        <div className="text-[48px] font-semibold tracking-tighter">10</div>
-                        <p className="text-[30px] font-medium tracking-tighter ml-1"></p>
-                    </div>
-                </Card>
-
-                <Card 
-                    onClick={() => navigateTab("rainfall")}
-                    hover
-                    activeTab={activeTab === "rainfall"}
-                >
-                    <div className="flex flex-col items-start gap-[2px]">
-                        <BsFillCloudRainFill size={24}/>
-                        <p className="text-[14px] font-medium text-inherit">Rainfall</p>
-                    </div>
-                    <div className="flex items-baseline items-end w-full">
-                        <div className="text-[48px] font-semibold tracking-tighter">10</div>
-                        <p className="text-[30px] font-medium tracking-tighter ml-1">mm</p>
-                    </div>
-                </Card>
-            </div>
-
-            {/* 2. Area Konten Dinamis (Berubah sesuai Card yang diklik) */}
-            <div className="w-full mt-2">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-[24px] font-bold text-[#454545]">
-                        {current.label} Analytics
-                    </h2>
+        <div className="col-span-8 flex flex-col gap-6 p-8 px-16 bg-[#F8FAFC] min-h-screen">
+            
+            {/* 1. HEADER GLOBAL: POT SELECTOR */}
+            <Card className="p-6 bg-white flex flex-col gap-4 shadow-sm border border-slate-100 z-20 sticky top-4">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-[#1E293B]">Comparative Analysis</h2>
                     
-                    <div className="flex gap-3">
-                        <TimeFilter />
-                        <DownloadButton onClick={() => console.log(`Exporting ${activeTab}...`)} />
+                    <div className="flex gap-2 items-center">
+                        <select 
+                            value={potToAdd}
+                            onChange={(e) => setPotToAdd(e.target.value)}
+                            className="border border-slate-200 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 focus:outline-none focus:border-[#10B981] bg-white cursor-pointer"
+                            disabled={selectedPots.length >= 4}
+                        >
+                            {availablePots.map((pot) => (
+                                <option key={pot} value={pot}>{pot}</option>
+                            ))}
+                        </select>
+                        <button 
+                            onClick={handleAddPot}
+                            disabled={selectedPots.length >= 4 || !potToAdd}
+                            className="bg-[#10B981] hover:bg-[#059669] disabled:bg-slate-300 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                        >
+                            + Add POT (Max 4)
+                        </button>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-12 gap-[15px]">
-                    {/* Bagian Chart */}
-                    <Card className="col-span-8 p-[20px] h-[415px] flex flex-col">
-                        <div className="flex-1 w-full">
-                            {/* Dummychart sekarang akan me-render ulang setiap activeTab berubah */}
-                            <Dummychart />
+                {/* List POT yang aktif (Chips) */}
+                <div className="flex gap-3 mt-2">
+                    {selectedPots.map((pot, index) => (
+                        <div 
+                            key={pot} 
+                            className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-[13px] font-bold shadow-sm transition-all"
+                            style={{ backgroundColor: POT_COLORS[index] }}
+                        >
+                            <span>{pot}</span>
+                            {selectedPots.length > 1 && (
+                                <button 
+                                    onClick={() => handleRemovePot(pot)}
+                                    className="hover:bg-black/20 rounded-full w-5 h-5 flex items-center justify-center transition-colors"
+                                    title="Remove POT"
+                                >
+                                    ✕
+                                </button>
+                            )}
                         </div>
-                    </Card>
-
-                    {/* Bagian Tabel */}
-                    <Card className="col-span-4 p-[20px] h-[415px] overflow-hidden">
-                        <div className="overflow-y-auto h-full">
-                            <table className="w-full text-center text-[13px] border-separate">
-                                <thead className="bg-gray-50 sticky top-0">
-                                    <tr className="text-gray-500">
-                                        <th className="py-3 font-medium border-b">Date</th>
-                                        <th className="py-3 font-medium border-b">Time</th>
-                                        <th className="py-3 font-medium border-b">{current.label}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {[...Array(10)].map((_, i) => (
-                                        <tr key={i} className="text-gray-600 hover:bg-gray-50">
-                                            <td className="py-3 px-2">17/02/2026</td>
-                                            <td className="py-3 px-2">09:4{i}</td>
-                                            <td className="py-3 px-2 font-semibold text-[#10B981]">
-                                                {current.value} {current.unit}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </Card>
+                    ))}
                 </div>
+            </Card>
+
+            {/* 2. DAFTAR PARAMETER */}
+            <div className="flex flex-col gap-8 pb-10">
+                <ParameterSection title="Temperature (Atas)" unit="°C" activePots={selectedPots} baseValue={28} />
+                <ParameterSection title="Temperature (Bawah)" unit="°C" activePots={selectedPots} baseValue={24} />
+                <ParameterSection title="Humidity (Atas)" unit="%" activePots={selectedPots} baseValue={75} />
+                <ParameterSection title="Humidity (Bawah)" unit="%" activePots={selectedPots} baseValue={80} />
+                <ParameterSection title="Water Level" unit="%" activePots={selectedPots} baseValue={40} />
+                <ParameterSection title="Water Flow" unit="L/min" activePots={selectedPots} baseValue={15} />
             </div>
         </div>
     );
 }
 
-export default function Weather() {
+/**
+ * SUB-COMPONENT: Parameter Section
+ */
+function ParameterSection({ title, unit, activePots, baseValue }: any) {
+    const [timeRange, setTimeRange] = useState("Today");
+    const [interval, setInterval] = useState("5 Minutes");
+
+    // Generator Data Dummy yang Reaktif terhadap filter waktu & interval
+    const chartData = useMemo(() => {
+        // 1. Tentukan jumlah data berdasarkan Time Range
+        let basePoints = 12; // Default "Today"
+        if (timeRange === "Last 3 Days") basePoints = 24;
+        if (timeRange === "This Week") basePoints = 40;
+
+        // 2. Modifikasi jumlah data berdasarkan Interval
+        let multiplier = 1;
+        if (interval === "1 Minute") multiplier = 2;
+        if (interval === "10 Minutes") multiplier = 0.5;
+        
+        const totalPoints = Math.floor(basePoints * multiplier);
+
+        return Array.from({ length: totalPoints }).map((_, i) => {
+            // Logic format waktu agar terlihat berubah
+            let timeLabel = "";
+            const minuteStep = interval === "1 Minute" ? 1 : interval === "5 Minutes" ? 5 : 10;
+            const minutes = (i * minuteStep) % 60;
+            const hours = 10 + Math.floor((i * minuteStep) / 60);
+
+            if (timeRange === "Today") {
+                timeLabel = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            } else {
+                const dayOffset = Math.floor(i / (totalPoints / 3)) + 1;
+                timeLabel = `D${dayOffset} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            }
+            
+            let row: any = { time: timeLabel };
+            
+            // Generate nilai untuk tiap POT menggunakan kombinasi sinus & random agar terlihat seperti data sensor
+            activePots.forEach((pot: string, index: number) => {
+                const offset = index * 2;
+                const wave = Math.sin(i / 2) * 1.5;
+                const noise = Math.random() * 1.2;
+                row[pot] = Number((baseValue + offset + wave + noise).toFixed(1));
+            });
+            
+            return row;
+        });
+    }, [activePots, timeRange, interval, baseValue]);
+
     return (
-        <Suspense fallback={<div className="p-10">Loading...</div>}>
-            <WeatherContent />
-        </Suspense>
+        <Card className="bg-white p-6 border border-slate-100 shadow-sm flex flex-col gap-6">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                <h3 className="text-[16px] font-bold text-[#1E293B] uppercase tracking-wide">{title}</h3>
+                
+                <div className="flex gap-3">
+                    <select 
+                        value={timeRange} 
+                        onChange={(e) => setTimeRange(e.target.value)}
+                        className="border border-slate-200 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 focus:outline-none focus:border-[#3B82F6] cursor-pointer bg-white"
+                    >
+                        <option>Today</option>
+                        <option>Last 3 Days</option>
+                        <option>This Week</option>
+                    </select>
+
+                    <select 
+                        value={interval} 
+                        onChange={(e) => setInterval(e.target.value)}
+                        className="border border-slate-200 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 focus:outline-none focus:border-[#3B82F6] cursor-pointer bg-white"
+                    >
+                        <option>1 Minute</option>
+                        <option>5 Minutes</option>
+                        <option>10 Minutes</option>
+                    </select>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-12 gap-6 h-[350px]">
+                {/* KIRI: CHART */}
+                <div className="col-span-8 h-full border border-slate-50 rounded-xl p-4 bg-slate-50/50">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                            <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 600 }} tickLine={false} axisLine={false} dy={10} />
+                            <YAxis tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 600 }} tickLine={false} axisLine={false} />
+                            <Tooltip 
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                labelStyle={{ fontWeight: 'bold', color: '#64748B', marginBottom: '8px' }}
+                                itemStyle={{ fontWeight: 700, fontSize: '12px' }}
+                            />
+                            <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 700, paddingTop: '15px' }} />
+                            
+                            {activePots.map((pot: string, index: number) => (
+                                <Line 
+                                    key={pot} 
+                                    type="monotone" 
+                                    dataKey={pot} 
+                                    stroke={POT_COLORS[index]} 
+                                    strokeWidth={3}
+                                    dot={{ r: 3, strokeWidth: 2, fill: '#fff' }}
+                                    activeDot={{ r: 6, strokeWidth: 0 }}
+                                    animationDuration={500}
+                                />
+                            ))}
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* KANAN: TABEL */}
+                <div className="col-span-4 h-full overflow-hidden border border-slate-100 rounded-xl">
+                    <div className="overflow-y-auto h-full styled-scrollbar">
+                        <table className="w-full text-center text-[12px] border-separate border-spacing-0">
+                            <thead className="bg-[#F8FAFC] sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th className="py-3 px-2 font-bold text-slate-500 border-b border-slate-200">Time</th>
+                                    {activePots.map((pot: string, index: number) => (
+                                        <th key={pot} className="py-3 px-2 font-bold border-b border-slate-200" style={{ color: POT_COLORS[index] }}>
+                                            {pot} <span className="text-[10px] font-normal text-slate-400 block -mt-1">{unit}</span>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {chartData.map((row, i) => (
+                                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                                        <td className="py-3 px-2 font-semibold text-slate-500">{row.time}</td>
+                                        {activePots.map((pot: string) => (
+                                            <td key={pot} className="py-3 px-2 font-bold text-[#1E293B]">
+                                                {row[pot]}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </Card>
     );
 }
