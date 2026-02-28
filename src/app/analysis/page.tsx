@@ -1,17 +1,72 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, useEffect, useRef, Suspense, memo } from "react";
 import { useSearchParams } from "next/navigation";
 import Card from "../../components/ui/Card";
 import { 
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
+import { HiChevronLeft, HiChevronRight, HiDownload, HiChevronDown } from "react-icons/hi";
 
-// Skema Warna untuk maksimal 4 POT
+// --- Types ---
+interface DataPoint {
+    fullDate: string;
+    time: string;
+    date: string;
+    timestamp: number;
+    [key: string]: string | number; 
+}
+
 const POT_COLORS = ["#10B981", "#3B82F6", "#EF4444", "#F59E0B"];
-
-// Samakan format dengan Monitoring Page: POT-01, POT-02, ..., POT-54
 const ALL_POTS = Array.from({ length: 54 }, (_, i) => `POT-${(i + 1).toString().padStart(2, '0')}`);
+
+// --- CUSTOM DROPDOWN COMPONENT (sama persis dengan Weather) ---
+const CustomSelect = ({ value, onChange, options }: { value: string, onChange: (val: string) => void, options: string[] }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    return (
+        <div className="relative inline-block text-left" ref={dropdownRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center justify-between whitespace-nowrap border border-[#1E293B]/10 hover:bg-[#1E293B]/5 bg-white rounded-lg px-4 py-2 text-xs font-bold text-[#1E293B]/60 transition-all shadow-sm outline-none"
+            >
+                <span>{value}</span>
+                <HiChevronDown className={`ml-3 w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isOpen && (
+                <div className="absolute left-0 mt-2 min-w-full px-2 py-2.5 bg-white border border-[#1E293B]/10 rounded-lg shadow-xl z-50 animate-in fade-in zoom-in duration-200 max-h-52 overflow-y-auto">
+                    {options.map((opt) => (
+                        <div key={opt} className="flex justify-center py-0.5">
+                            <div
+                                onClick={() => {
+                                    onChange(opt);
+                                    setIsOpen(false);
+                                }}
+                                className={`w-full whitespace-nowrap px-2.5 py-2.5 text-xs font-semibold text-left rounded-md cursor-pointer transition-colors hover:bg-[#10B981]/20 ${
+                                    value === opt ? "bg-[#10B981]/20 text-[#10B981]" : "text-[#1E293B]/60"
+                                }`}
+                            >
+                                {opt}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export default function AnalysisPage() {
     return (
@@ -23,89 +78,87 @@ export default function AnalysisPage() {
 
 function AnalysisContent() {
     const searchParams = useSearchParams();
-    
-    // 1. Ambil POT dari URL (hasil klik dari Monitoring Page), jika tidak ada gunakan POT-01
     const urlPot = searchParams.get("pot");
     const initialPot = urlPot && ALL_POTS.includes(urlPot) ? urlPot : ALL_POTS[0];
     
     const [selectedPots, setSelectedPots] = useState<string[]>([initialPot]);
     const [potToAdd, setPotToAdd] = useState<string>("");
 
-    // Update daftar POT yang tersedia di dropdown (belum terpilih)
-    const availablePots = ALL_POTS.filter((p) => !selectedPots.includes(p));
+    const availablePotsForComparison = useMemo(() => {
+        return ALL_POTS.filter(p => !selectedPots.includes(p));
+    }, [selectedPots]);
 
-    // Pastikan potToAdd selalu memiliki nilai valid yang tidak ada di selectedPots
     useEffect(() => {
-        if (availablePots.length > 0 && !availablePots.includes(potToAdd)) {
-            setPotToAdd(availablePots[0]);
-        }
-    }, [selectedPots, availablePots, potToAdd]);
+        if (!selectedPots.includes(potToAdd) && potToAdd !== "") return;
+        setPotToAdd(availablePotsForComparison[0] || "");
+    }, [selectedPots, availablePotsForComparison, potToAdd]);
+
+    const handleSwapPrimaryPot = (newId: string) => {
+        setSelectedPots(prev => [newId, ...prev.slice(1).filter(id => id !== newId)]);
+    };
 
     const handleAddPot = () => {
-        if (selectedPots.length < 4 && potToAdd && !selectedPots.includes(potToAdd)) {
+        if (selectedPots.length < 4 && potToAdd) {
             setSelectedPots([...selectedPots, potToAdd]);
         }
     };
 
-    const handleRemovePot = (potToRemove: string) => {
+    const handleRemovePot = (index: number) => {
         if (selectedPots.length > 1) {
-            setSelectedPots(selectedPots.filter((p) => p !== potToRemove));
+            setSelectedPots(selectedPots.filter((_, i) => i !== index));
         }
     };
 
     return (
-        <div className="col-span-8 flex flex-col gap-6 p-8 px-16 bg-[#F8FAFC] min-h-screen">
-            
-            {/* 1. HEADER GLOBAL: POT SELECTOR */}
+        <div className="col-span-8 flex flex-col gap-6 p-8 px-16 min-h-screen">
+            {/* === HEADER CARD (tidak diubah) === */}
             <Card className="p-6 bg-white flex flex-col gap-4 shadow-sm border border-slate-100 z-20 sticky top-4">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-[#1E293B]">Comparative Analysis</h2>
+                <div className="flex flex-wrap justify-between items-center gap-4">
+                    <div className="flex flex-col gap-1">
+                        <h2 className="text-lg font-bold uppercase text-[#1E293B]">Comparative Analysis</h2>
+                        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Monitor up to 4 devices simultaneously</p>
+                    </div>
                     
-                    <div className="flex gap-2 items-center">
-                        <select 
-                            value={potToAdd}
-                            onChange={(e) => setPotToAdd(e.target.value)}
-                            className="border border-slate-200 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 focus:outline-none focus:border-[#10B981] bg-white cursor-pointer"
-                            disabled={selectedPots.length >= 4}
-                        >
-                            {availablePots.map((pot) => (
-                                <option key={pot} value={pot}>{pot}</option>
-                            ))}
-                        </select>
-                        <button 
-                            onClick={handleAddPot}
-                            disabled={selectedPots.length >= 4 || !potToAdd}
-                            className="bg-[#10B981] hover:bg-[#059669] disabled:bg-slate-300 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
-                        >
-                            + Add POT (Max 4)
-                        </button>
+                    <div className="flex gap-4 items-center">
+                        <div className="flex flex-col gap-1 justify-center items-center">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">Primary Device</label>
+                            <CustomSelect
+                                value={selectedPots[0]}
+                                onChange={handleSwapPrimaryPot}
+                                options={ALL_POTS}
+                            />
+                        </div>
+                        <div className="flex flex-row gap-3 justify-center items-end">
+                            <div className="flex flex-col gap-1 justify-center items-center">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Add Comparison</label>
+                                <CustomSelect
+                                    value={potToAdd}
+                                    onChange={setPotToAdd}
+                                    options={availablePotsForComparison}
+                                />
+                            </div>
+                            <button 
+                                onClick={handleAddPot} 
+                                disabled={selectedPots.length >= 4 || !potToAdd} 
+                                className="bg-[#3B82F6] hover:bg-[#2563EB] disabled:bg-slate-200 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                            >
+                                Compare
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* List POT yang aktif (Chips) */}
                 <div className="flex gap-3 mt-2">
                     {selectedPots.map((pot, index) => (
-                        <div 
-                            key={pot} 
-                            className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-[13px] font-bold shadow-sm transition-all"
-                            style={{ backgroundColor: POT_COLORS[index] }}
-                        >
-                            <span>{pot}</span>
-                            {selectedPots.length > 1 && (
-                                <button 
-                                    onClick={() => handleRemovePot(pot)}
-                                    className="hover:bg-black/20 rounded-full w-5 h-5 flex items-center justify-center transition-colors"
-                                    title="Remove POT"
-                                >
-                                    ✕
-                                </button>
-                            )}
+                        <div key={pot} className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-[13px] font-bold shadow-sm" style={{ backgroundColor: POT_COLORS[index] }}>
+                            <span>{index === 0 ? `MAIN: ${pot}` : pot}</span>
+                            {index !== 0 && <button onClick={() => handleRemovePot(index)} className="hover:bg-black/20 rounded-full w-5 h-5 flex items-center justify-center transition-colors">✕</button>}
                         </div>
                     ))}
                 </div>
             </Card>
 
-            {/* 2. DAFTAR PARAMETER */}
+            {/* === PARAMETER SECTIONS === */}
             <div className="flex flex-col gap-8 pb-10">
                 <ParameterSection title="Temperature (Atas)" unit="°C" activePots={selectedPots} baseValue={28} />
                 <ParameterSection title="Temperature (Bawah)" unit="°C" activePots={selectedPots} baseValue={24} />
@@ -113,140 +166,270 @@ function AnalysisContent() {
                 <ParameterSection title="Humidity (Bawah)" unit="%" activePots={selectedPots} baseValue={80} />
                 <ParameterSection title="Water Level" unit="%" activePots={selectedPots} baseValue={40} />
                 <ParameterSection title="Water Flow" unit="L/min" activePots={selectedPots} baseValue={15} />
+                <ParameterSection title="Valve Status" unit="Status" activePots={selectedPots} baseValue={0} isDigital />
             </div>
         </div>
     );
 }
 
-/**
- * SUB-COMPONENT: Parameter Section
- */
-function ParameterSection({ title, unit, activePots, baseValue }: any) {
+const ParameterSection = memo(({ title, unit, activePots, baseValue, isDigital }: any) => {
     const [timeRange, setTimeRange] = useState("Today");
-    const [interval, setInterval] = useState("5 Minutes");
+    const [interval, setInterval] = useState("5 menit");
+    const [customStart, setCustomStart] = useState("");
+    const [customEnd, setCustomEnd] = useState("");
+    const [currentPage, setCurrentPage] = useState(0);
+    const [pageInput, setPageInput] = useState("1");
 
-    // Generator Data Dummy yang Reaktif terhadap filter waktu & interval
+    const pageSize = 20;
+    const nowISO = new Date().toISOString().slice(0, 16);
+
+    // --- Data Generation ---
     const chartData = useMemo(() => {
-        // 1. Tentukan jumlah data berdasarkan Time Range
-        let basePoints = 12; // Default "Today"
-        if (timeRange === "Last 3 Days") basePoints = 24;
-        if (timeRange === "This Week") basePoints = 40;
+        let points = 50; 
+        const now = new Date();
+        const data: DataPoint[] = [];
+        const intervalMap: Record<string, number> = { "1 menit": 1, "5 menit": 5, "10 menit": 10, "30 menit": 30, "1 jam": 60 };
+        const step = intervalMap[interval] || 5;
 
-        // 2. Modifikasi jumlah data berdasarkan Interval
-        let multiplier = 1;
-        if (interval === "1 Minute") multiplier = 2;
-        if (interval === "10 Minutes") multiplier = 0.5;
-        
-        const totalPoints = Math.floor(basePoints * multiplier);
+        let startTime = now.getTime();
 
-        return Array.from({ length: totalPoints }).map((_, i) => {
-            // Logic format waktu agar terlihat berubah
-            let timeLabel = "";
-            const minuteStep = interval === "1 Minute" ? 1 : interval === "5 Minutes" ? 5 : 10;
-            const minutes = (i * minuteStep) % 60;
-            const hours = 10 + Math.floor((i * minuteStep) / 60);
+        if (timeRange === "Custom Range" && customStart && customEnd) {
+            const start = new Date(customStart).getTime();
+            const end = new Date(customEnd).getTime();
+            points = Math.max(1, Math.floor((end - start) / (step * 60000)));
+            startTime = end;
+        } else {
+            const rangeMap: Record<string, number> = { "Last 5 Minutes": 5, "Last 15 Minutes": 15, "Last 30 Minutes": 30, "Last 1 Hour": 60, "Last 6 Hours": 360, "Today": now.getHours() * 60 + now.getMinutes(), "Yesterday": 1440 };
+            points = (rangeMap[timeRange] || 50) / step;
+        }
 
-            if (timeRange === "Today") {
-                timeLabel = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-            } else {
-                const dayOffset = Math.floor(i / (totalPoints / 3)) + 1;
-                timeLabel = `D${dayOffset} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-            }
+        for (let i = 0; i <= Math.floor(points); i++) {
+            const date = new Date(startTime - i * step * 60000);
+            const dateStr = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+            const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
             
-            let row: any = { time: timeLabel };
-            
-            // Generate nilai untuk tiap POT menggunakan kombinasi sinus & random agar terlihat seperti data sensor
-            activePots.forEach((pot: string, index: number) => {
-                const offset = index * 2;
-                const wave = Math.sin(i / 2) * 1.5;
-                const noise = Math.random() * 1.2;
-                row[pot] = Number((baseValue + offset + wave + noise).toFixed(1));
+            let row: DataPoint = { fullDate: `${dateStr} ${timeStr}`, time: timeStr, date: dateStr, timestamp: date.getTime() };
+            activePots.forEach((pot: string, idx: number) => {
+                if (isDigital) {
+                    row[pot] = Math.random() > 0.5 ? 1 : 0;
+                } else {
+                    row[pot] = Number((baseValue + (idx * 2) + Math.sin(i / 5) * 2 + Math.random()).toFixed(1));
+                }
             });
-            
-            return row;
-        });
-    }, [activePots, timeRange, interval, baseValue]);
+            data.push(row);
+        }
+        return data.sort((a, b) => a.timestamp - b.timestamp);
+    }, [activePots, timeRange, interval, baseValue, isDigital, customStart, customEnd]);
+
+    // --- Pagination ---
+    const totalPages = Math.ceil(chartData.length / pageSize) || 1;
+
+    useEffect(() => {
+        setCurrentPage(totalPages - 1);
+        setPageInput((totalPages).toString());
+    }, [chartData.length, totalPages]);
+
+    const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setPageInput(val);
+        const num = parseInt(val);
+        if (num > 0 && num <= totalPages) {
+            setCurrentPage(num - 1);
+        }
+    };
+
+    const pagedData = useMemo(() => {
+        return chartData.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+    }, [chartData, currentPage]);
+
+    const downloadCSV = () => {
+        const headers = ["Date", "Time", ...activePots.map((p: string) => `${p} (${unit})`)];
+        const rows = chartData.map((d: DataPoint) => [
+            d.date, d.time, ...activePots.map((p: string) => isDigital ? (d[p] === 1 ? "OPEN" : "CLOSED") : d[p])
+        ]);
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${title}_${timeRange}.csv`;
+        link.click();
+    };
 
     return (
-        <Card className="bg-white p-6 border border-slate-100 shadow-sm flex flex-col gap-6">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                <h3 className="text-[16px] font-bold text-[#1E293B] uppercase tracking-wide">{title}</h3>
-                
-                <div className="flex gap-3">
-                    <select 
-                        value={timeRange} 
-                        onChange={(e) => setTimeRange(e.target.value)}
-                        className="border border-slate-200 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 focus:outline-none focus:border-[#3B82F6] cursor-pointer bg-white"
-                    >
-                        <option>Today</option>
-                        <option>Last 3 Days</option>
-                        <option>This Week</option>
-                    </select>
+        <Card className="bg-white p-6 shadow-sm flex flex-col gap-6">
+            {/* Header */}
+            <div className="flex flex-col gap-2 shrink-0">
+                <div className="flex justify-between items-center">
+                    {/* Kiri: Judul + Tombol CSV */}
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-bold text-[#1E293B] uppercase">{title}</h3>
+                        <button 
+                            onClick={downloadCSV} 
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#10B981]/80 hover:bg-[#10B981] hover:text-white text-white rounded-[16px] text-xs font-bold transition-all shadow-sm"
+                        >
+                            <HiDownload className="w-4 h-4" /> CSV
+                        </button>
+                    </div>
 
-                    <select 
+                    {/* Kanan: Pagination (input number style Weather) */}
+                    <div className="flex gap-2 items-center">
+                        <button 
+                            disabled={currentPage === 0} 
+                            onClick={() => {
+                                const newPage = currentPage - 1;
+                                setCurrentPage(newPage);
+                                setPageInput((newPage + 1).toString());
+                            }} 
+                            className="p-2 rounded-md hover:bg-[#1E293B]/10 disabled:opacity-20 border border-[#1E293B]/10 transition-colors"
+                        >
+                            <HiChevronLeft className="w-5 h-5 text-[#1E293B]" />
+                        </button>
+                        
+                        <div className="flex items-center gap-2 bg-[#1E293B]/3 border border-[#1E293B]/10 px-3 py-2 rounded-lg">
+                            <input 
+                                type="number"
+                                value={pageInput}
+                                onChange={handlePageInputChange}
+                                className="w-10 text-center text-xs font-bold text-[#10B981] bg-transparent outline-none"
+                            />
+                            <span className="text-xs font-bold text-[#1E293B]/60">of {totalPages}</span>
+                        </div>
+
+                        <button 
+                            disabled={currentPage >= totalPages - 1} 
+                            onClick={() => {
+                                const newPage = currentPage + 1;
+                                setCurrentPage(newPage);
+                                setPageInput((newPage + 1).toString());
+                            }} 
+                            className="p-2 rounded-md hover:bg-[#1E293B]/10 disabled:opacity-20 border border-[#1E293B]/10 bg-white transition-colors"
+                        >
+                            <HiChevronRight className="w-5 h-5 text-[#1E293B]" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Filter Bar (CustomSelect style Weather) */}
+                <div className="flex flex-wrap gap-3">
+                    <CustomSelect 
+                        value={timeRange} 
+                        onChange={setTimeRange} 
+                        options={["Last 5 Minutes", "Last 15 Minutes", "Last 30 Minutes", "Last 1 Hour", "Last 6 Hours", "Today", "Yesterday", "Custom Range"]}
+                    />
+
+                    {timeRange === "Custom Range" && (
+                        <div className="flex gap-2 text-xs items-center bg-[#1E293B]/3 px-3 py-1 rounded-lg border border-[#1E293B]/10">
+                            <input 
+                                type="datetime-local"
+                                max={nowISO}
+                                className="bg-transparent text-[11px] font-bold text-slate-600 outline-none" 
+                                value={customStart} 
+                                onChange={(e) => setCustomStart(e.target.value)} 
+                            />
+                            <span className="text-xs font-bold text-slate-400">to</span>
+                            <input 
+                                type="datetime-local"
+                                max={nowISO}
+                                className="bg-transparent text-[11px] font-bold text-slate-600 outline-none" 
+                                value={customEnd} 
+                                onChange={(e) => setCustomEnd(e.target.value)} 
+                            />
+                        </div>
+                    )}
+
+                    <CustomSelect 
                         value={interval} 
-                        onChange={(e) => setInterval(e.target.value)}
-                        className="border border-slate-200 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-600 focus:outline-none focus:border-[#3B82F6] cursor-pointer bg-white"
-                    >
-                        <option>1 Minute</option>
-                        <option>5 Minutes</option>
-                        <option>10 Minutes</option>
-                    </select>
+                        onChange={setInterval} 
+                        options={["1 menit", "5 menit", "10 menit", "30 menit", "1 jam"]}
+                    />
                 </div>
             </div>
 
-            <div className="grid grid-cols-12 gap-6 h-[350px]">
-                {/* KIRI: CHART */}
-                <div className="col-span-8 h-full border border-slate-50 rounded-xl p-4 bg-slate-50/50">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                            <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 600 }} tickLine={false} axisLine={false} dy={10} />
-                            <YAxis tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 600 }} tickLine={false} axisLine={false} />
-                            <Tooltip 
-                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                                labelStyle={{ fontWeight: 'bold', color: '#64748B', marginBottom: '8px' }}
-                                itemStyle={{ fontWeight: 700, fontSize: '12px' }}
-                            />
-                            <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 700, paddingTop: '15px' }} />
-                            
-                            {activePots.map((pot: string, index: number) => (
-                                <Line 
-                                    key={pot} 
-                                    type="monotone" 
-                                    dataKey={pot} 
-                                    stroke={POT_COLORS[index]} 
-                                    strokeWidth={3}
-                                    dot={{ r: 3, strokeWidth: 2, fill: '#fff' }}
-                                    activeDot={{ r: 6, strokeWidth: 0 }}
-                                    animationDuration={500}
+            {/* Chart + Table */}
+            <div className={`grid grid-cols-12 gap-6 h-[380px]`}>
+                {/* Chart — hanya tampil jika bukan digital */}
+                {!isDigital && (
+                    <div className="col-span-8 h-full border border-slate-50 rounded-xl p-4 bg-slate-50/50">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={pagedData} margin={{ top: 10, right: 20, left: 20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                <XAxis 
+                                    dataKey="time" 
+                                    tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 600 }} 
+                                    axisLine={false} 
+                                    tickLine={false}
+                                    angle={-45}
+                                    textAnchor="end"
+                                    height={70}
+                                    dx={-5}
+                                    dy={10}
+                                    label={{ value: 'Time', position: 'insideBottom', offset: 0, fill: '#94A3B8', fontSize: 12, fontWeight: 'bold' }}
                                 />
-                            ))}
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
+                                <YAxis 
+                                    domain={['auto', 'auto']} 
+                                    tick={{ fontSize: 10, fill: '#94A3B8', fontWeight: 600 }} 
+                                    axisLine={false} 
+                                    tickLine={false}
+                                    width={70}
+                                    label={{ 
+                                        value: unit ? `${title} (${unit})` : title, 
+                                        angle: -90, 
+                                        position: 'insideLeft', 
+                                        offset: 10,
+                                        style: { textAnchor: 'middle', fill: '#94A3B8', fontSize: 12, fontWeight: 'bold' } 
+                                    }}
+                                />
+                                <Tooltip 
+                                    labelStyle={{ fontWeight: 'bold' }} 
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                    labelFormatter={(value, payload) => payload?.[0] ? `${payload[0].payload.date}, ${value}` : value}
+                                />
+                                <Legend 
+                                    wrapperStyle={{ 
+                                        fontSize: '11px', 
+                                        fontWeight: 700, 
+                                        paddingTop: '15px',
+                                        paddingLeft: '80px'
+                                    }} 
+                                    align="center"
+                                />
+                                {activePots.map((pot: string, index: number) => (
+                                    <Line 
+                                        key={pot} 
+                                        type="monotone"
+                                        dataKey={pot} 
+                                        stroke={POT_COLORS[index]} 
+                                        strokeWidth={3} 
+                                        dot={{ r: 4, fill: POT_COLORS[index], strokeWidth: 2, stroke: '#fff' }}
+                                        activeDot={{ r: 6, strokeWidth: 0 }}
+                                    />
+                                ))}
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                )}
 
-                {/* KANAN: TABEL */}
-                <div className="col-span-4 h-full overflow-hidden border border-slate-100 rounded-xl">
-                    <div className="overflow-y-auto h-full styled-scrollbar">
-                        <table className="w-full text-center text-[12px] border-separate border-spacing-0">
-                            <thead className="bg-[#F8FAFC] sticky top-0 z-10 shadow-sm">
+                {/* Table — full width jika digital, 4 kolom jika ada chart */}
+                <div className={`${isDigital ? 'col-span-12' : 'col-span-4'} border border-slate-100 rounded-xl bg-white flex flex-col min-h-0 overflow-hidden`}>
+                    <div className="overflow-y-auto flex-1 styled-scrollbar">
+                        <table className="w-full text-center text-[11px] border-separate border-spacing-0">
+                            <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th className="py-3 px-2 font-bold text-slate-500 border-b border-slate-200">Time</th>
+                                    <th className="py-3 px-4 font-bold text-slate-500 border-b border-slate-200">Date & Time</th>
                                     {activePots.map((pot: string, index: number) => (
-                                        <th key={pot} className="py-3 px-2 font-bold border-b border-slate-200" style={{ color: POT_COLORS[index] }}>
-                                            {pot} <span className="text-[10px] font-normal text-slate-400 block -mt-1">{unit}</span>
-                                        </th>
+                                        <th key={pot} className="py-3 px-4 font-bold border-b border-slate-200" style={{ color: POT_COLORS[index] }}>{pot}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {chartData.map((row, i) => (
+                                {[...pagedData].reverse().map((row, i) => (
                                     <tr key={i} className="hover:bg-slate-50 transition-colors">
-                                        <td className="py-3 px-2 font-semibold text-slate-500">{row.time}</td>
+                                        <td className="py-3 px-4 text-slate-400">
+                                            <span className="text-[#1E293B] font-bold block">{row.time}</span> {row.date}
+                                        </td>
                                         {activePots.map((pot: string) => (
-                                            <td key={pot} className="py-3 px-2 font-bold text-[#1E293B]">
-                                                {row[pot]}
+                                            <td key={pot} className={`py-3 px-4 font-bold ${isDigital ? (row[pot] === 1 ? 'text-[#10B981]' : 'text-[#EF4444]') : 'text-[#1E293B]'}`}>
+                                                {isDigital ? (row[pot] === 1 ? 'OPEN' : 'CLOSED') : row[pot]}
                                             </td>
                                         ))}
                                     </tr>
@@ -258,4 +441,4 @@ function ParameterSection({ title, unit, activePots, baseValue }: any) {
             </div>
         </Card>
     );
-}
+});

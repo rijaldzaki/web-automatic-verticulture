@@ -10,11 +10,13 @@ import { FaArrowUpRightFromSquare } from "react-icons/fa6";
 import { FiWind } from "react-icons/fi";
 import { MdSunny } from "react-icons/md";
 import { BsFillCloudRainFill } from "react-icons/bs";
+import { useWeatherData } from "@/hooks/useWeatherData";
 
 export default function Home() {
   const [selectedPot, setSelectedPot] = useState("POT 1");
   const [selectedVar, setSelectedVar] = useState("Temperature");
   const router = useRouter();
+  const weatherValues = useWeatherData();
 
   const potOptions = Array.from({ length: 54 }, (_, i) => `POT ${i + 1}`);
   const varOptions = ["Temperature", "Soil Moisture", "Water Level", "Water Flow", "Valve Status"];
@@ -26,7 +28,7 @@ export default function Home() {
       <div className="grid grid-cols-4 gap-8 min-h-[120px]">
         <WeatherHomeCard 
           label="Temperature"
-          value="20"
+          value={weatherValues.temperatureout.toString()}
           unit="°C"
           icon={<PiThermometerBold size={24} />}
           onRoute={() => router.push("/weather?tab=temperature")}
@@ -34,7 +36,7 @@ export default function Home() {
 
         <WeatherHomeCard 
           label="Wind"
-          value="2"
+          value={weatherValues.wind.toString()}
           unit="m/s"
           icon={<FiWind size={24} />}
           onRoute={() => router.push("/weather?tab=wind")}
@@ -42,7 +44,7 @@ export default function Home() {
 
         <WeatherHomeCard 
           label="UV"
-          value="10"
+          value={weatherValues.uv.toString()}
           unit=""
           icon={<MdSunny size={24} />}
           onRoute={() => router.push("/weather?tab=uv")}
@@ -50,7 +52,7 @@ export default function Home() {
 
         <WeatherHomeCard 
           label="Rainfall"
-          value="10"
+          value={weatherValues.rainfall.toString()}
           unit="mm"
           icon={<BsFillCloudRainFill size={24} />}
           onRoute={() => router.push("/weather?tab=rainfall")}

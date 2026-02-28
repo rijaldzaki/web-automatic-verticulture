@@ -19,7 +19,7 @@ export default function Sidebar() {
     const pathname = usePathname();
 
     return (
-        <aside className="fixed w-[240px] h-screen bg-[#1E293B] p-8">
+        <aside className="fixed w-[240px] h-screen bg-[#1E293B] p-8 pt-10">
 
         <div className="mb-[50px] items-center flex flex-col juston-center">
         <Link href="/">
@@ -45,7 +45,7 @@ export default function Sidebar() {
                 key={item.path}
                 href={item.path}
                 className={
-                    `flex items-center gap-3 p-3 rounded-[16px] transition ${active ? "bg-[#10B981] text-white" : "text-[#ffffff]/60 hover:bg-[#ffffff]/20 hover:text-[#ffffff]/80"}
+                    `flex items-center gap-3 p-3 rounded-xl transition ${active ? "bg-[#10B981] text-white" : "text-[#ffffff]/60 hover:bg-[#ffffff]/20 hover:text-[#ffffff]/80"}
                     font-medium text-[14px]
                     `
                 }

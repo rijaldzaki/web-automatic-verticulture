@@ -27,11 +27,11 @@ export default function DashboardHeader() {
     return (
         <div className="flex justify-between items-center px-16 pt-8 h-[78px]">
             <div>
-                <h1 className="font-bold text-[24px] text-[#1E293B] leading-tight">
+                <h1 className="font-bold text-xl text-[#1E293B] leading-tight uppercase">
                     {getTitle(pathname)}
                 </h1>
                 {pathname === "/" ? (
-                    <p className="text-[14px]">
+                    <p className="text-sm">
                         <span className="text-[#10B981] font-semibold">Hello,</span>{" "}
                         <span className="text-[#1E293B]/60">welcome to VertIO - Automatic Verticulture!</span>
                     </p>
@@ -40,8 +40,8 @@ export default function DashboardHeader() {
                 )}
             </div>
             <div className="text-right text-[#1E293B]">
-                <div className="font-semibold text-[18px] leading-tight">{dateStr}</div>
-                <div className="text-[14px] font-medium text-[#1E293B]/60">
+                <div className="font-semibold text-lg leading-tight">{dateStr}</div>
+                <div className="text-sm font-medium text-[#1E293B]/60">
                     {timeStr}
                 </div>
             </div>
